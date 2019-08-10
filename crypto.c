@@ -8,7 +8,7 @@
  */
 
 static const uint8_t
-    padding_RSA2048_sha256[ROT_RSA2048_NUM_BYTES - ROT_sha256_DIGEST_SIZE] = {
+    padding_RSA2048_sha256[RSA2048_NUM_BYTES - SHA256_DIGEST_SIZE] = {
         0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -30,7 +30,7 @@ static const uint8_t
         0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20};
 
 static const uint8_t
-    padding_RSA4096_sha256[ROT_RSA4096_NUM_BYTES - ROT_sha256_DIGEST_SIZE] = {
+    padding_RSA4096_sha256[RSA4096_NUM_BYTES - SHA256_DIGEST_SIZE] = {
         0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -73,7 +73,7 @@ static const uint8_t
         0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20};
 
 static const uint8_t
-    padding_RSA8192_sha256[ROT_RSA8192_NUM_BYTES - ROT_sha256_DIGEST_SIZE] = {
+    padding_RSA8192_sha256[RSA8192_NUM_BYTES - SHA256_DIGEST_SIZE] = {
         0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -159,7 +159,7 @@ static const uint8_t
         0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20};
 
 static const uint8_t
-    padding_RSA2048_sha512[ROT_RSA2048_NUM_BYTES - ROT_sha512_DIGEST_SIZE] = {
+    padding_RSA2048_sha512[RSA2048_NUM_BYTES - SHA512_DIGEST_SIZE] = {
         0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -178,7 +178,7 @@ static const uint8_t
         0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40};
 
 static const uint8_t
-    padding_RSA4096_sha512[ROT_RSA4096_NUM_BYTES - ROT_sha512_DIGEST_SIZE] = {
+    padding_RSA4096_sha512[RSA4096_NUM_BYTES - SHA512_DIGEST_SIZE] = {
         0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -219,7 +219,7 @@ static const uint8_t
         0x05, 0x00, 0x04, 0x40};
 
 static const uint8_t
-    padding_RSA8192_sha512[ROT_RSA8192_NUM_BYTES - ROT_sha512_DIGEST_SIZE] = {
+    padding_RSA8192_sha512[RSA8192_NUM_BYTES - SHA512_DIGEST_SIZE] = {
         0x00, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
         0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -301,48 +301,48 @@ static const uint8_t
         0xff, 0xff, 0xff, 0xff, 0x00, 0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60,
         0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40};
 
-static rotAlgorithmData algorithm_data[_ROT_ALGORITHM_NUM_TYPES] = {
+static algorithm_spec_data spec_data[ALGORITHM_NUM_TYPES] = {
     /* ROT_ALGORITHM_TYPE_NONE */
     {.padding = NULL, .padding_len = 0, .hash_len = 0},
     /* ROT_ALGORITHM_TYPE_sha256_RSA2048 */
     {.padding = padding_RSA2048_sha256,
      .padding_len = sizeof(padding_RSA2048_sha256),
-     .hash_len = ROT_sha256_DIGEST_SIZE},
+     .hash_len = SHA256_DIGEST_SIZE},
     /* ROT_ALGORITHM_TYPE_sha256_RSA4096 */
     {.padding = padding_RSA4096_sha256,
      .padding_len = sizeof(padding_RSA4096_sha256),
-     .hash_len = ROT_sha256_DIGEST_SIZE},
+     .hash_len = SHA256_DIGEST_SIZE},
     /* ROT_ALGORITHM_TYPE_sha256_RSA8192 */
     {.padding = padding_RSA8192_sha256,
      .padding_len = sizeof(padding_RSA8192_sha256),
-     .hash_len = ROT_sha256_DIGEST_SIZE},
+     .hash_len = SHA256_DIGEST_SIZE},
     /* ROT_ALGORITHM_TYPE_sha512_RSA2048 */
     {.padding = padding_RSA2048_sha512,
      .padding_len = sizeof(padding_RSA2048_sha512),
-     .hash_len = ROT_sha512_DIGEST_SIZE},
+     .hash_len = SHA512_DIGEST_SIZE},
     /* ROT_ALGORITHM_TYPE_sha512_RSA4096 */
     {.padding = padding_RSA4096_sha512,
      .padding_len = sizeof(padding_RSA4096_sha512),
-     .hash_len = ROT_sha512_DIGEST_SIZE},
+     .hash_len = SHA512_DIGEST_SIZE},
     /* ROT_ALGORITHM_TYPE_sha512_RSA8192 */
     {.padding = padding_RSA8192_sha512,
      .padding_len = sizeof(padding_RSA8192_sha512),
-     .hash_len = ROT_sha512_DIGEST_SIZE},
+     .hash_len = SHA512_DIGEST_SIZE},
 };
 
-const rotAlgorithmData* avb_get_algorithm_data(rotAlgorithmType algorithm) {
-  if ((size_t)algorithm < _ROT_ALGORITHM_NUM_TYPES) {
-    return &algorithm_data[algorithm];
+const algorithm_spec_data* avb_get_algorithm_spec_data(AlgorithmType algorithm) {
+  if ((size_t)algorithm < ALGORITHM_NUM_TYPES) {
+    return &spec_data[algorithm];
   }
   return NULL;
 }
 
 bool rsa_public_key_header_validate_and_byteswap(
-    const rotRSAPublicKeyHeader* src, rotRSAPublicKeyHeader* dest) {
-  memcpy(dest, src, sizeof(rotRSAPublicKeyHeader));
+    const RSAPublicKeyHeader* src, RSAPublicKeyHeader* dest) {
+  memcpy(dest, src, sizeof(RSAPublicKeyHeader));
 
-  dest->key_num_bits = avb_be32toh(dest->key_num_bits);
-  dest->n0inv = avb_be32toh(dest->n0inv);
+  dest->key_num_bits = be32toh(dest->key_num_bits);
+  dest->n0inv = be32toh(dest->n0inv);
 
   return true;
 }

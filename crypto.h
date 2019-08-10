@@ -1,86 +1,86 @@
-#ifndef ROT_CRYPTO_H_
-#define ROT_CRYPTO_H_
+#ifndef CRYPTO_H_
+#define CRYPTO_H_
 #include <common.h>
 
 /* Size of a RSA-2048 signature. */
-#define ROT_RSA2048_NUM_BYTES 256
+#define RSA2048_NUM_BYTES 256
 
 /* Size of a RSA-4096 signature. */
-#define ROT_RSA4096_NUM_BYTES 512
+#define RSA4096_NUM_BYTES 512
 
 /* Size of a RSA-8192 signature. */
-#define ROT_RSA8192_NUM_BYTES 1024
+#define RSA8192_NUM_BYTES 1024
 
 /* Size in bytes of a sha-256 digest. */
-#define ROT_sha256_DIGEST_SIZE 32
+#define SHA256_DIGEST_SIZE 32
 
 /* Size in bytes of a sha-512 digest. */
-#define ROT_sha512_DIGEST_SIZE 64
+#define SHA512_DIGEST_SIZE 64
 
 /* Algorithms that can be used in the vbmeta image for
  * verification. An algorithm consists of a hash type and a signature
  * type.
  *
  * The data used to calculate the hash is the three blocks mentioned
- * in the documentation for |rotVBMetaImageHeader| except for the data
+ * in the documentation for |VBMetaImageHeader| except for the data
  * in the "Authentication data" block.
  *
  * For signatures with RSA keys, PKCS v1.5 padding is used. The public
  * key data is stored in the auxiliary data block, see
- * |rotRSAPublicKeyHeader| for the serialization format.
+ * |RSAPublicKeyHeader| for the serialization format.
  *
  * Each algorithm type is described below:
  *
- * ROT_ALGORITHM_TYPE_NONE: There is no hash, no signature of the
+ * ALGORITHM_TYPE_NONE: There is no hash, no signature of the
  * data, and no public key. The data cannot be verified. The fields
  * |hash_size|, |signature_size|, and |public_key_size| must be zero.
  *
- * ROT_ALGORITHM_TYPE_sha256_RSA2048: The hash function used is
+ * ALGORITHM_TYPE_sha256_RSA2048: The hash function used is
  * sha-256, resulting in 32 bytes of hash digest data. This hash is
  * signed with a 2048-bit RSA key. The field |hash_size| must be 32,
  * |signature_size| must be 256, and the public key data must have
  * |key_num_bits| set to 2048.
  *
- * ROT_ALGORITHM_TYPE_sha256_RSA4096: Like above, but only with
+ * ALGORITHM_TYPE_sha256_RSA4096: Like above, but only with
  * a 4096-bit RSA key and |signature_size| set to 512.
  *
- * ROT_ALGORITHM_TYPE_sha256_RSA8192: Like above, but only with
+ * ALGORITHM_TYPE_sha256_RSA8192: Like above, but only with
  * a 8192-bit RSA key and |signature_size| set to 1024.
  *
- * ROT_ALGORITHM_TYPE_sha512_RSA2048: The hash function used is
+ * ALGORITHM_TYPE_sha512_RSA2048: The hash function used is
  * sha-512, resulting in 64 bytes of hash digest data. This hash is
  * signed with a 2048-bit RSA key. The field |hash_size| must be 64,
  * |signature_size| must be 256, and the public key data must have
  * |key_num_bits| set to 2048.
  *
- * ROT_ALGORITHM_TYPE_sha512_RSA4096: Like above, but only with
+ * ALGORITHM_TYPE_sha512_RSA4096: Like above, but only with
  * a 4096-bit RSA key and |signature_size| set to 512.
  *
- * ROT_ALGORITHM_TYPE_sha512_RSA8192: Like above, but only with
+ * ALGORITHM_TYPE_sha512_RSA8192: Like above, but only with
  * a 8192-bit RSA key and |signature_size| set to 1024.
  */
 typedef enum {
-  ROT_ALGORITHM_TYPE_NONE,
-  ROT_ALGORITHM_TYPE_sha256_RSA2048,
-  ROT_ALGORITHM_TYPE_sha256_RSA4096,
-  ROT_ALGORITHM_TYPE_sha256_RSA8192,
-  ROT_ALGORITHM_TYPE_sha512_RSA2048,
-  ROT_ALGORITHM_TYPE_sha512_RSA4096,
-  ROT_ALGORITHM_TYPE_sha512_RSA8192,
-  _ROT_ALGORITHM_NUM_TYPES
-} rotAlgorithmType;
+	ALGORITHM_TYPE_NONE,
+	ALGORITHM_TYPE_sha256_RSA2048,
+	ALGORITHM_TYPE_sha256_RSA4096,
+	ALGORITHM_TYPE_sha256_RSA8192,
+	ALGORITHM_TYPE_sha512_RSA2048,
+	ALGORITHM_TYPE_sha512_RSA4096,
+	ALGORITHM_TYPE_sha512_RSA8192,
+	ALGORITHM_NUM_TYPES
+} AlgorithmType;
 
 /* Holds algorithm-specific data. The |padding| is needed by rsa_verify. */
 typedef struct {
-  const uint8_t* padding;
-  size_t padding_len;
-  size_t hash_len;
-} rotAlgorithmData;
+	const uint8_t *padding;
+	size_t padding_len;
+	size_t hash_len;
+} algorithm_spec_data;
 
 /* Provides algorithm-specific data for a given |algorithm|. Returns NULL if
  * |algorithm| is invalid.
  */
-const rotAlgorithmData* avb_get_algorithm_data(rotAlgorithmType algorithm);
+const algorithm_spec_data *avb_get_algorithm_spec_data(AlgorithmType algorithm);
 
 /* The header for a serialized RSA public key.
  *
@@ -112,16 +112,15 @@ const rotAlgorithmData* avb_get_algorithm_data(rotAlgorithmType algorithm);
  * The 'avbtool extract_public_key' command can be used to generate a
  * serialized RSA public key.
  */
-typedef struct rotRSAPublicKeyHeader {
-  uint32_t key_num_bits;
-  uint32_t n0inv;
-} __attribute__((packed)) rotRSAPublicKeyHeader;
+typedef struct RSAPublicKeyHeader {
+	uint32_t key_num_bits;
+	uint32_t n0inv;
+} __attribute__((packed)) RSAPublicKeyHeader;
 
 /* Copies |src| to |dest| and validates, byte-swapping fields in the
  * process if needed. Returns true if valid, false if invalid.
  */
-bool rsa_public_key_header_validate_and_byteswap(
-    const rotRSAPublicKeyHeader* src,
-    rotRSAPublicKeyHeader* dest);
+bool rsa_public_key_header_validate_and_byteswap(const RSAPublicKeyHeader *src,
+						 RSAPublicKeyHeader *dest);
 
-#endif /* ROT_CRYPTO_H_ */
+#endif /* CRYPTO_H_ */

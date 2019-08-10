@@ -42,7 +42,7 @@ extern "C" {
  * |padding| of length |padding_num_bytes|.
  *
  * The data in |key| must match the format defined in
- * |rotRSAPublicKeyHeader|, including the two large numbers
+ * |RSAPublicKeyHeader|, including the two large numbers
  * following. The |key_num_bytes| must be the size of the entire
  * serialized key.
  *

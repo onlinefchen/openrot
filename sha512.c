@@ -1,40 +1,3 @@
-/* sha-256 and sha-512 implementation based on code by Oliver Gay
- * <olivier.gay@a3.epfl.ch> under a BSD-style license. See below.
- */
-
-/*
- * FIPS 180-2 sha-224/256/384/512 implementation
- * Last update: 02/02/2007
- * Issue date:  04/30/2005
- *
- * Copyright (C) 2005, 2007 Olivier Gay <olivier.gay@a3.epfl.ch>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the project nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT shaLL THE PROJECT OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
-
 #include "sha.h"
 
 #define SHFR(x, n) (x >> n)
@@ -131,7 +94,7 @@ static const uint64_t sha512_k[80] = {
 
 /* sha-512 implementation */
 
-void sha512_init(rotsha512ctx* ctx) {
+void sha512_init(sha512ctx* ctx) {
 #ifdef UNROLL_LOOPS_sha512
   ctx->h[0] = sha512_h0[0];
   ctx->h[1] = sha512_h0[1];
@@ -152,7 +115,7 @@ void sha512_init(rotsha512ctx* ctx) {
   ctx->tot_len = 0;
 }
 
-static void sha512_transform(rotsha512ctx* ctx,
+static void sha512_transform(sha512ctx* ctx,
                              const uint8_t* message,
                              unsigned int block_nb) {
   uint64_t w[80];
@@ -318,30 +281,30 @@ static void sha512_transform(rotsha512ctx* ctx,
   }
 }
 
-void sha512_update(rotsha512ctx* ctx, const uint8_t* data, uint32_t len) {
+void sha512_update(sha512ctx* ctx, const uint8_t* data, uint32_t len) {
   unsigned int block_nb;
   unsigned int new_len, rem_len, tmp_len;
   const uint8_t* shifted_data;
 
-  tmp_len = ROT_sha512_BLOCK_SIZE - ctx->len;
+  tmp_len = SHA512_BLOCK_SIZE - ctx->len;
   rem_len = len < tmp_len ? len : tmp_len;
 
   memcpy(&ctx->block[ctx->len], data, rem_len);
 
-  if (ctx->len + len < ROT_sha512_BLOCK_SIZE) {
+  if (ctx->len + len < SHA512_BLOCK_SIZE) {
     ctx->len += len;
     return;
   }
 
   new_len = len - rem_len;
-  block_nb = new_len / ROT_sha512_BLOCK_SIZE;
+  block_nb = new_len / SHA512_BLOCK_SIZE;
 
   shifted_data = data + rem_len;
 
   sha512_transform(ctx, ctx->block, 1);
   sha512_transform(ctx, shifted_data, block_nb);
 
-  rem_len = new_len % ROT_sha512_BLOCK_SIZE;
+  rem_len = new_len % SHA512_BLOCK_SIZE;
 
   memcpy(ctx->block, &shifted_data[block_nb << 7], rem_len);
 
@@ -349,7 +312,7 @@ void sha512_update(rotsha512ctx* ctx, const uint8_t* data, uint32_t len) {
   ctx->tot_len += (block_nb + 1) << 7;
 }
 
-uint8_t* sha512_final(rotsha512ctx* ctx) {
+uint8_t* sha512_final(sha512ctx* ctx) {
   unsigned int block_nb;
   unsigned int pm_len;
   unsigned int len_b;
@@ -359,7 +322,7 @@ uint8_t* sha512_final(rotsha512ctx* ctx) {
 #endif
 
   block_nb =
-      1 + ((ROT_sha512_BLOCK_SIZE - 17) < (ctx->len % ROT_sha512_BLOCK_SIZE));
+      1 + ((SHA512_BLOCK_SIZE - 17) < (ctx->len % SHA512_BLOCK_SIZE));
 
   len_b = (ctx->tot_len + ctx->len) << 3;
   pm_len = block_nb << 7;
