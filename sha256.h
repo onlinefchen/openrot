@@ -325,25 +325,25 @@ void sha256_update(rotsha256ctx* ctx, const uint8_t* data, uint32_t len) {
   unsigned int new_len, rem_len, tmp_len;
   const uint8_t* shifted_data;
 
-  tmp_len = ROT_sha256_BLOCK_SIZE - ctx->len;
+  tmp_len = sha256_BLOCK_SIZE - ctx->len;
   rem_len = len < tmp_len ? len : tmp_len;
 
   memcpy(&ctx->block[ctx->len], data, rem_len);
 
-  if (ctx->len + len < ROT_sha256_BLOCK_SIZE) {
+  if (ctx->len + len < sha256_BLOCK_SIZE) {
     ctx->len += len;
     return;
   }
 
   new_len = len - rem_len;
-  block_nb = new_len / ROT_sha256_BLOCK_SIZE;
+  block_nb = new_len / sha256_BLOCK_SIZE;
 
   shifted_data = data + rem_len;
 
   sha256_transform(ctx, ctx->block, 1);
   sha256_transform(ctx, shifted_data, block_nb);
 
-  rem_len = new_len % ROT_sha256_BLOCK_SIZE;
+  rem_len = new_len % sha256_BLOCK_SIZE;
 
   memcpy(ctx->block, &shifted_data[block_nb << 6], rem_len);
 
@@ -360,7 +360,7 @@ uint8_t* sha256_final(rotsha256ctx* ctx) {
 #endif
 
   block_nb =
-      (1 + ((ROT_sha256_BLOCK_SIZE - 9) < (ctx->len % ROT_sha256_BLOCK_SIZE)));
+      (1 + ((sha256_BLOCK_SIZE - 9) < (ctx->len % sha256_BLOCK_SIZE)));
 
   len_b = (ctx->tot_len + ctx->len) << 3;
   pm_len = block_nb << 6;

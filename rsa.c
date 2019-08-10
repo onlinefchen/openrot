@@ -6,24 +6,23 @@
 #include "rsa.h"
 #include "sha.h"
 
-typedef struct Key {
+typedef struct rsakey {
 	unsigned int len; /* Length of n[] in number of uint32_t */
 	uint32_t n0inv;   /* -1 / n[0] mod 2^32 */
 	uint32_t *n;      /* modulus as array (host-byte order) */
 	uint32_t *rr;     /* R^2 as array (host-byte order) */
-} Key;
+} rsakey;
 
-static Key *_parse_key_data(const uint8_t *data, size_t length)
+static rsakey *_parse_key_data(const uint8_t *data, size_t length)
 {
-	RSAPublicKeyHeader h;
-	Key *key = NULL;
+	rsa_pubkey_header h;
+	rsakey *key = NULL;
 	size_t expected_length;
 	unsigned int i;
 	const uint8_t *n;
 	const uint8_t *rr;
 
-	if (!rsa_public_key_header_validate_and_byteswap(
-		    (const RSAPublicKeyHeader *)data, &h)) {
+	if (!byteswap_rsakey_header((const rsa_pubkey_header *)data, &h)) {
 		printf("Invalid key.\n");
 		goto fail;
 	}
@@ -34,33 +33,32 @@ static Key *_parse_key_data(const uint8_t *data, size_t length)
 		goto fail;
 	}
 
-	expected_length =
-		sizeof(RSAPublicKeyHeader) + 2 * h.key_num_bits / 8;
+	expected_length = sizeof(rsa_pubkey_header) + 2 * h.key_num_bits / 8;
 	if (length != expected_length) {
-		printf("Key does not match expected length.\n");
+		printf("rsakey does not match expected length.\n");
 		goto fail;
 	}
 
-	n = data + sizeof(RSAPublicKeyHeader);
-	rr = data + sizeof(RSAPublicKeyHeader) + h.key_num_bits / 8;
+	n = data + sizeof(rsa_pubkey_header);
+	rr = data + sizeof(rsa_pubkey_header) + h.key_num_bits / 8;
 
 	/* Store n and rr following the key header so we only have to do one
-   * allocation.
-   */
-	key = (Key *)(malloc(sizeof(Key) + 2 * h.key_num_bits / 8));
+	 * allocation.
+	 */
+	key = (rsakey *)(malloc(sizeof(rsakey) + 2 * h.key_num_bits / 8));
 	if (key == NULL) {
 		goto fail;
 	}
 
 	key->len = h.key_num_bits / 32;
 	key->n0inv = h.n0inv;
-	key->n = (uint32_t *)(key + 1); /* Skip ahead sizeof(Key) bytes. */
+	key->n = (uint32_t *)(key + 1); /* Skip ahead sizeof(rsakey) bytes. */
 	key->rr = key->n + key->len;
 
-	/* Crypto-code below (modpowF4() and friends) expects the key in
-   * little-endian format (rather than the format we're storing the
-   * key in), so convert it.
-   */
+	/* Crypto-code below (mod_powf4() and friends) expects the key in
+	 * little-endian format (rather than the format we're storing the
+	 * key in), so convert it.
+	 */
 	for (i = 0; i < key->len; i++) {
 		key->n[i] = be32toh(((uint32_t *)n)[key->len - i - 1]);
 		key->rr[i] = be32toh(((uint32_t *)rr)[key->len - i - 1]);
@@ -74,13 +72,13 @@ fail:
 	return NULL;
 }
 
-static void ifree_parsed_key(Key *key)
+static void ifree_parsed_key(rsakey *key)
 {
 	free(key);
 }
 
 /* a[] -= mod */
-static void subM(const Key *key, uint32_t *a)
+static void sub_m(const rsakey *key, uint32_t *a)
 {
 	int64_t A = 0;
 	uint32_t i;
@@ -92,7 +90,7 @@ static void subM(const Key *key, uint32_t *a)
 }
 
 /* return a[] >= mod */
-static int geM(const Key *key, uint32_t *a)
+static int ge_m(const rsakey *key, uint32_t *a)
 {
 	uint32_t i;
 	for (i = key->len; i;) {
@@ -108,8 +106,8 @@ static int geM(const Key *key, uint32_t *a)
 }
 
 /* montgomery c[] += a * b[] / R % mod */
-static void montMulAdd(const Key *key, uint32_t *c, const uint32_t a,
-		       const uint32_t *b)
+static void mont_mutadd(const rsakey *key, uint32_t *c, const uint32_t a,
+			const uint32_t *b)
 {
 	uint64_t A = (uint64_t)a * b[0] + c[0];
 	uint32_t d0 = (uint32_t)A * key->n0inv;
@@ -127,26 +125,26 @@ static void montMulAdd(const Key *key, uint32_t *c, const uint32_t a,
 	c[i - 1] = (uint32_t)A;
 
 	if (A >> 32) {
-		subM(key, c);
+		sub_m(key, c);
 	}
 }
 
 /* montgomery c[] = a[] * b[] / R % mod */
-static void montMul(const Key *key, uint32_t *c, uint32_t *a, uint32_t *b)
+static void mmont_mul(const rsakey *key, uint32_t *c, uint32_t *a, uint32_t *b)
 {
 	uint32_t i;
 	for (i = 0; i < key->len; ++i) {
 		c[i] = 0;
 	}
 	for (i = 0; i < key->len; ++i) {
-		montMulAdd(key, c, a[i], b);
+		mont_mutadd(key, c, a[i], b);
 	}
 }
 
 /* In-place public exponentiation. (65537}
  * Input and output big-endian byte array in inout.
  */
-static void modpowF4(const Key *key, uint8_t *inout)
+static void mod_powf4(const rsakey *key, uint8_t *inout)
 {
 	uint32_t *a = (uint32_t *)malloc(key->len * sizeof(uint32_t));
 	uint32_t *aR = (uint32_t *)malloc(key->len * sizeof(uint32_t));
@@ -167,16 +165,16 @@ static void modpowF4(const Key *key, uint8_t *inout)
 		a[i] = tmp;
 	}
 
-	montMul(key, aR, a, key->rr); /* aR = a * RR / R mod M   */
+	mmont_mul(key, aR, a, key->rr); /* aR = a * RR / R mod M   */
 	for (i = 0; i < 16; i += 2) {
-		montMul(key, aaR, aR, aR);  /* aaR = aR * aR / R mod M */
-		montMul(key, aR, aaR, aaR); /* aR = aaR * aaR / R mod M */
+		mmont_mul(key, aaR, aR, aR);  /* aaR = aR * aR / R mod M */
+		mmont_mul(key, aR, aaR, aaR); /* aR = aaR * aaR / R mod M */
 	}
-	montMul(key, aaa, aR, a); /* aaa = aR * a / R mod M */
+	mmont_mul(key, aaa, aR, a); /* aaa = aR * a / R mod M */
 
 	/* Make sure aaa < mod; aaa is at most 1x mod too large. */
-	if (geM(key, aaa)) {
-		subM(key, aaa);
+	if (ge_m(key, aaa)) {
+		sub_m(key, aaa);
 	}
 
 	/* Convert to bigendian byte array */
@@ -209,7 +207,7 @@ bool rsa_verify(const uint8_t *key, size_t key_num_bytes, const uint8_t *sig,
 		size_t padding_num_bytes)
 {
 	uint8_t *buf = NULL;
-	Key *parsed_key = NULL;
+	rsakey *parsed_key = NULL;
 	bool success = false;
 
 	if (key == NULL || sig == NULL || hash == NULL || padding == NULL) {
@@ -240,7 +238,7 @@ bool rsa_verify(const uint8_t *key, size_t key_num_bytes, const uint8_t *sig,
 	}
 	memcpy(buf, sig, sig_num_bytes);
 
-	modpowF4(parsed_key, buf);
+	mod_powf4(parsed_key, buf);
 
 	/* Check padding bytes.
 	 *

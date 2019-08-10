@@ -27,7 +27,7 @@
  *
  * For signatures with RSA keys, PKCS v1.5 padding is used. The public
  * key data is stored in the auxiliary data block, see
- * |RSAPublicKeyHeader| for the serialization format.
+ * |rsa_pubkey_header| for the serialization format.
  *
  * Each algorithm type is described below:
  *
@@ -68,7 +68,7 @@ typedef enum {
 	ALGORITHM_TYPE_sha512_RSA4096,
 	ALGORITHM_TYPE_sha512_RSA8192,
 	ALGORITHM_NUM_TYPES
-} AlgorithmType;
+} ALGORITHMTYPE;
 
 /* Holds algorithm-specific data. The |padding| is needed by rsa_verify. */
 typedef struct {
@@ -80,7 +80,7 @@ typedef struct {
 /* Provides algorithm-specific data for a given |algorithm|. Returns NULL if
  * |algorithm| is invalid.
  */
-const algorithm_spec_data *avb_get_algorithm_spec_data(AlgorithmType algorithm);
+const algorithm_spec_data *get_algorithm_spec_data(ALGORITHMTYPE algorithm);
 
 /* The header for a serialized RSA public key.
  *
@@ -104,7 +104,7 @@ const algorithm_spec_data *avb_get_algorithm_spec_data(AlgorithmType algorithm);
  *
  * All fields in this struct are stored in network byte order when
  * serialized.  To generate a copy with fields swapped to native byte
- * order, use the function rsa_public_key_header_validate_and_byteswap().
+ * order, use the function byteswap_rsakey_header().
  *
  * The rsa_verify() function expects a key in this serialized
  * format.
@@ -112,15 +112,15 @@ const algorithm_spec_data *avb_get_algorithm_spec_data(AlgorithmType algorithm);
  * The 'avbtool extract_public_key' command can be used to generate a
  * serialized RSA public key.
  */
-typedef struct RSAPublicKeyHeader {
+typedef struct rsa_pubkey_header {
 	uint32_t key_num_bits;
 	uint32_t n0inv;
-} __attribute__((packed)) RSAPublicKeyHeader;
+} __attribute__((packed)) rsa_pubkey_header;
 
 /* Copies |src| to |dest| and validates, byte-swapping fields in the
  * process if needed. Returns true if valid, false if invalid.
  */
-bool rsa_public_key_header_validate_and_byteswap(const RSAPublicKeyHeader *src,
-						 RSAPublicKeyHeader *dest);
+bool byteswap_rsakey_header(const rsa_pubkey_header *src,
+			    rsa_pubkey_header *dest);
 
 #endif /* CRYPTO_H_ */
